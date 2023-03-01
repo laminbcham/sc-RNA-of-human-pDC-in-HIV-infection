@@ -1,0 +1,1243 @@
+
+########## Data cleanup and doublet finder
+
+
+library(Seurat)
+library(SeuratObject)
+setwd("C:/Users/au672897/Desktop/pDC Sequence data")
+HIV103_V1.data <- Read10X(data.dir = "Raw data-all/HIV103_V1/filtered_feature_bc_matrix")
+HIV103_V1<-CreateSeuratObject(counts = HIV103_V1.data, project = "HIV103_V1", min.cells = 0, min.features = 200)
+HIV103_V1[["percent.mt"]] <- PercentageFeatureSet(HIV103_V1, pattern = "^MT-")
+HIV103_V1 <- subset(HIV103_V1, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt <25)
+HIV103_V1 <- NormalizeData(HIV103_V1, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV103_V1 <- FindVariableFeatures(HIV103_V1, selection.method = "vst", nfeatures = 2000)
+HIV103_V1 <- FindVariableFeatures(object = HIV103_V1, selection.method = "vst", nfeatures = 2000)
+HIV103_V1 <- ScaleData(object = HIV103_V1, verbose = FALSE)
+HIV103_V1 <- RunPCA(object = HIV103_V1, npcs = 30, verbose = FALSE)
+HIV103_V1 <- RunUMAP(object = HIV103_V1, reduction = "pca", dims = 1:20) 
+HIV103_V1 <- FindNeighbors(object = HIV103_V1, reduction = "pca", dims = 1:20)
+HIV103_V1 <- FindClusters(HIV103_V1, resolution = 0.5)
+DimPlot(HIV103_V1, reduction = "umap", label = TRUE, repel = TRUE, pt.size = 1)
+remotes::install_github('chris-mcginnis-ucsf/DoubletFinder')
+suppressMessages(require(DoubletFinder))
+sweep.res.list_HIV103_V1 <- paramSweep_v3(HIV103_V1, PCs = 1:10, sct = TRUE)
+sweep.stats_HIV103_V1 <- summarizeSweep(sweep.res.list_HIV103_V1, GT = FALSE)
+bcmvn_HIV103_V1 <- find.pK(sweep.stats_HIV103_V1)
+annotations <- HIV103_V1@meta.data$RNA_snn_res.0.5
+homotypic.prop <- modelHomotypic(annotations)
+nExp_poi <- round(0.075*nrow(HIV103_V1@meta.data))
+nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+HIV103_V1 <- doubletFinder_v3(HIV103_V1, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi, reuse.pANN = FALSE, sct = TRUE)
+head(HIV103_V1[[]])
+HIV103_V1 <- doubletFinder_v3(HIV103_V1, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi.adj, reuse.pANN = "pANN_0.25_0.09_794", sct = TRUE)
+Idents(HIV103_V1) <- "DF.classifications_0.25_0.09_794"
+DimPlot(HIV103_V1, reduction = "umap")
+HIV103_V1
+DF.name = colnames(HIV103_V1@meta.data)[grepl("DF.classifications_0.25_0.09_794", colnames(HIV103_V1@meta.data))]
+HIV103_V1_singlet = HIV103_V1[,HIV103_V1@meta.data[,DF.name] == "Singlet"]
+HIV103_V1_singlet
+saveRDS(HIV103_V1_singlet, file = "C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV103_V1.rds")
+
+#HIV103_V12
+HIV103_V12.data <- Read10X(data.dir = "Raw data-all/HIV103_V12/filtered_feature_bc_matrix")
+HIV103_V12<-CreateSeuratObject(counts = HIV103_V12.data, project = "HIV103_V12", min.cells = 0, min.features = 200)
+HIV103_V12[["percent.mt"]] <- PercentageFeatureSet(HIV103_V12, pattern = "^MT-")
+HIV103_V12 <- subset(HIV103_V12, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt <25)
+HIV103_V12 <- NormalizeData(HIV103_V12, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV103_V12 <- FindVariableFeatures(HIV103_V12, selection.method = "vst", nfeatures = 2000)
+HIV103_V12 <- FindVariableFeatures(object = HIV103_V12, selection.method = "vst", nfeatures = 2000)
+HIV103_V12 <- ScaleData(object = HIV103_V12, verbose = FALSE)
+HIV103_V12 <- RunPCA(object = HIV103_V12, npcs = 30, verbose = FALSE)
+HIV103_V12 <- RunUMAP(object = HIV103_V12, reduction = "pca", dims = 1:20) 
+HIV103_V12 <- FindNeighbors(object = HIV103_V12, reduction = "pca", dims = 1:20)
+HIV103_V12 <- FindClusters(HIV103_V12, resolution = 0.5)
+DimPlot(HIV103_V12, reduction = "umap", label = TRUE, repel = TRUE, pt.size = 1)
+remotes::install_github('chris-mcginnis-ucsf/DoubletFinder')
+suppressMessages(require(DoubletFinder))
+sweep.res.list_HIV103_V12 <- paramSweep_v3(HIV103_V12, PCs = 1:10, sct = TRUE)
+sweep.stats_HIV103_V12 <- summarizeSweep(sweep.res.list_HIV103_V12, GT = FALSE)
+bcmvn_HIV103_V12 <- find.pK(sweep.stats_HIV103_V12)
+annotations <- HIV103_V12@meta.data$RNA_snn_res.0.5
+homotypic.prop <- modelHomotypic(annotations)
+nExp_poi <- round(0.075*nrow(HIV103_V12@meta.data))
+nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+HIV103_V12 <- doubletFinder_v3(HIV103_V12, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi, reuse.pANN = FALSE, sct = TRUE)
+head(HIV103_V12[[]])
+HIV103_V12 <- doubletFinder_v3(HIV103_V12, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi.adj, reuse.pANN = "pANN_0.25_0.09_1497", sct = TRUE)
+Idents(HIV103_V12) <- "DF.classifications_0.25_0.09_1497"
+DimPlot(HIV103_V12, reduction = "umap")
+HIV103_V12
+DF.name = colnames(HIV103_V12@meta.data)[grepl("DF.classifications_0.25_0.09_1497", colnames(HIV103_V12@meta.data))]
+HIV103_V12_singlet = HIV103_V12[,HIV103_V12@meta.data[,DF.name] == "Singlet"]
+HIV103_V12_singlet
+saveRDS(HIV103_V12_singlet, file = "C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV103_V12.rds")
+
+#HIV109_V1
+HIV109_V1.data <- Read10X(data.dir = "Raw data-all/HIV109_V1/filtered_feature_bc_matrix")
+HIV109_V1<-CreateSeuratObject(counts = HIV109_V1.data, project = "HIV109_V1", min.cells = 0, min.features = 200)
+HIV109_V1[["percent.mt"]] <- PercentageFeatureSet(HIV109_V1, pattern = "^MT-")
+HIV109_V1 <- subset(HIV109_V1, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt <25)
+HIV109_V1 <- NormalizeData(HIV109_V1, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV109_V1 <- FindVariableFeatures(HIV109_V1, selection.method = "vst", nfeatures = 2000)
+HIV109_V1 <- FindVariableFeatures(object = HIV109_V1, selection.method = "vst", nfeatures = 2000)
+HIV109_V1 <- ScaleData(object = HIV109_V1, verbose = FALSE)
+HIV109_V1 <- RunPCA(object = HIV109_V1, npcs = 30, verbose = FALSE)
+HIV109_V1 <- RunUMAP(object = HIV109_V1, reduction = "pca", dims = 1:20) 
+HIV109_V1 <- FindNeighbors(object = HIV109_V1, reduction = "pca", dims = 1:20)
+HIV109_V1 <- FindClusters(HIV109_V1, resolution = 0.5)
+DimPlot(HIV109_V1, reduction = "umap", label = TRUE, repel = TRUE, pt.size = 1)
+remotes::install_github('chris-mcginnis-ucsf/DoubletFinder')
+suppressMessages(require(DoubletFinder))
+sweep.res.list_HIV109_V1 <- paramSweep_v3(HIV109_V1, PCs = 1:10, sct = TRUE)
+sweep.stats_HIV109_V1 <- summarizeSweep(sweep.res.list_HIV109_V1, GT = FALSE)
+bcmvn_HIV109_V1 <- find.pK(sweep.stats_HIV109_V1)
+annotations <- HIV109_V1@meta.data$RNA_snn_res.0.5
+homotypic.prop <- modelHomotypic(annotations)
+nExp_poi <- round(0.075*nrow(HIV109_V1@meta.data))
+nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+HIV109_V1 <- doubletFinder_v3(HIV109_V1, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi, reuse.pANN = FALSE, sct = TRUE)
+head(HIV109_V1[[]])
+HIV109_V1 <- doubletFinder_v3(HIV109_V1, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi.adj, reuse.pANN = "pANN_0.25_0.09_805", sct = TRUE)
+Idents(HIV109_V1) <- "DF.classifications_0.25_0.09_805"
+DimPlot(HIV109_V1, reduction = "umap")
+HIV109_V1
+DF.name = colnames(HIV109_V1@meta.data)[grepl("DF.classifications_0.25_0.09_805", colnames(HIV109_V1@meta.data))]
+HIV109_V1_singlet = HIV109_V1[,HIV109_V1@meta.data[,DF.name] == "Singlet"]
+HIV109_V1_singlet
+saveRDS(HIV109_V1_singlet, file = "C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV109_V1.rds")
+
+#HIV109_V12
+HIV109_V12.data <- Read10X(data.dir = "Raw data-all/HIV109_V12/filtered_feature_bc_matrix")
+HIV109_V12<-CreateSeuratObject(counts = HIV109_V12.data, project = "HIV109_V12", min.cells = 0, min.features = 200)
+HIV109_V12[["percent.mt"]] <- PercentageFeatureSet(HIV109_V12, pattern = "^MT-")
+HIV109_V12 <- subset(HIV109_V12, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt <25)
+HIV109_V12 <- NormalizeData(HIV109_V12, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV109_V12 <- FindVariableFeatures(HIV109_V12, selection.method = "vst", nfeatures = 2000)
+HIV109_V12 <- FindVariableFeatures(object = HIV109_V12, selection.method = "vst", nfeatures = 2000)
+HIV109_V12 <- ScaleData(object = HIV109_V12, verbose = FALSE)
+HIV109_V12 <- RunPCA(object = HIV109_V12, npcs = 30, verbose = FALSE)
+HIV109_V12 <- RunUMAP(object = HIV109_V12, reduction = "pca", dims = 1:20) 
+HIV109_V12 <- FindNeighbors(object = HIV109_V12, reduction = "pca", dims = 1:20)
+HIV109_V12 <- FindClusters(HIV109_V12, resolution = 0.5)
+DimPlot(HIV109_V12, reduction = "umap", label = TRUE, repel = TRUE, pt.size = 1)
+remotes::install_github('chris-mcginnis-ucsf/DoubletFinder')
+suppressMessages(require(DoubletFinder))
+sweep.res.list_HIV109_V12 <- paramSweep_v3(HIV109_V12, PCs = 1:10, sct = TRUE)
+sweep.stats_HIV109_V12 <- summarizeSweep(sweep.res.list_HIV109_V12, GT = FALSE)
+bcmvn_HIV109_V12 <- find.pK(sweep.stats_HIV109_V12)
+annotations <- HIV109_V12@meta.data$RNA_snn_res.0.5
+homotypic.prop <- modelHomotypic(annotations)
+nExp_poi <- round(0.075*nrow(HIV109_V12@meta.data))
+nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+HIV109_V12 <- doubletFinder_v3(HIV109_V12, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi, reuse.pANN = FALSE, sct = TRUE)
+head(HIV109_V12[[]])
+HIV109_V12 <- doubletFinder_v3(HIV109_V12, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi.adj, reuse.pANN = "pANN_0.25_0.09_964", sct = TRUE)
+Idents(HIV109_V12) <- "DF.classifications_0.25_0.09_964"
+DimPlot(HIV109_V12, reduction = "umap")
+HIV109_V12
+DF.name = colnames(HIV109_V12@meta.data)[grepl("DF.classifications_0.25_0.09_964", colnames(HIV109_V12@meta.data))]
+HIV109_V12_singlet = HIV109_V12[,HIV109_V12@meta.data[,DF.name] == "Singlet"]
+HIV109_V12_singlet
+saveRDS(HIV109_V12_singlet, file = "C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV109_V12.rds")
+
+#HIV112_V1
+HIV112_V1.data <- Read10X(data.dir = "Raw data-all/HIV112_V1/filtered_feature_bc_matrix")
+HIV112_V1<-CreateSeuratObject(counts = HIV112_V1.data, project = "HIV112_V1", min.cells = 0, min.features = 200)
+HIV112_V1[["percent.mt"]] <- PercentageFeatureSet(HIV112_V1, pattern = "^MT-")
+HIV112_V1 <- subset(HIV112_V1, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt <25)
+HIV112_V1 <- NormalizeData(HIV112_V1, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV112_V1 <- FindVariableFeatures(HIV112_V1, selection.method = "vst", nfeatures = 2000)
+HIV112_V1 <- FindVariableFeatures(object = HIV112_V1, selection.method = "vst", nfeatures = 2000)
+HIV112_V1 <- ScaleData(object = HIV112_V1, verbose = FALSE)
+HIV112_V1 <- RunPCA(object = HIV112_V1, npcs = 30, verbose = FALSE)
+HIV112_V1 <- RunUMAP(object = HIV112_V1, reduction = "pca", dims = 1:20) 
+HIV112_V1 <- FindNeighbors(object = HIV112_V1, reduction = "pca", dims = 1:20)
+HIV112_V1 <- FindClusters(HIV112_V1, resolution = 0.5)
+DimPlot(HIV112_V1, reduction = "umap", label = TRUE, repel = TRUE, pt.size = 1)
+remotes::install_github('chris-mcginnis-ucsf/DoubletFinder')
+suppressMessages(require(DoubletFinder))
+sweep.res.list_HIV112_V1 <- paramSweep_v3(HIV112_V1, PCs = 1:10, sct = TRUE)
+sweep.stats_HIV112_V1 <- summarizeSweep(sweep.res.list_HIV112_V1, GT = FALSE)
+bcmvn_HIV112_V1 <- find.pK(sweep.stats_HIV112_V1)
+annotations <- HIV112_V1@meta.data$RNA_snn_res.0.5
+homotypic.prop <- modelHomotypic(annotations)
+nExp_poi <- round(0.075*nrow(HIV112_V1@meta.data))
+nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+HIV112_V1 <- doubletFinder_v3(HIV112_V1, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi, reuse.pANN = FALSE, sct = TRUE)
+head(HIV112_V1[[]])
+HIV112_V1 <- doubletFinder_v3(HIV112_V1, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi.adj, reuse.pANN = "pANN_0.25_0.09_1244", sct = TRUE)
+Idents(HIV112_V1) <- "DF.classifications_0.25_0.09_1244"
+DimPlot(HIV112_V1, reduction = "umap")
+HIV112_V1
+DF.name = colnames(HIV112_V1@meta.data)[grepl("DF.classifications_0.25_0.09_1244", colnames(HIV112_V1@meta.data))]
+HIV112_V1_singlet = HIV112_V1[,HIV112_V1@meta.data[,DF.name] == "Singlet"]
+HIV112_V1_singlet
+saveRDS(HIV112_V1_singlet, file = "C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV112_V1.rds")
+
+#HIV112_V12
+HIV112_V12.data <- Read10X(data.dir = "Raw data-all/HIV112_V12/filtered_feature_bc_matrix")
+HIV112_V12<-CreateSeuratObject(counts = HIV112_V12.data, project = "HIV112_V12", min.cells = 0, min.features = 200)
+HIV112_V12[["percent.mt"]] <- PercentageFeatureSet(HIV112_V12, pattern = "^MT-")
+HIV112_V12 <- subset(HIV112_V12, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt <25)
+HIV112_V12 <- NormalizeData(HIV112_V12, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV112_V12 <- FindVariableFeatures(HIV112_V12, selection.method = "vst", nfeatures = 2000)
+HIV112_V12 <- FindVariableFeatures(object = HIV112_V12, selection.method = "vst", nfeatures = 2000)
+HIV112_V12 <- ScaleData(object = HIV112_V12, verbose = FALSE)
+HIV112_V12 <- RunPCA(object = HIV112_V12, npcs = 30, verbose = FALSE)
+HIV112_V12 <- RunUMAP(object = HIV112_V12, reduction = "pca", dims = 1:20) 
+HIV112_V12 <- FindNeighbors(object = HIV112_V12, reduction = "pca", dims = 1:20)
+HIV112_V12 <- FindClusters(HIV112_V12, resolution = 0.5)
+DimPlot(HIV112_V12, reduction = "umap", label = TRUE, repel = TRUE, pt.size = 1)
+remotes::install_github('chris-mcginnis-ucsf/DoubletFinder')
+suppressMessages(require(DoubletFinder))
+sweep.res.list_HIV112_V12 <- paramSweep_v3(HIV112_V12, PCs = 1:10, sct = TRUE)
+sweep.stats_HIV112_V12 <- summarizeSweep(sweep.res.list_HIV112_V12, GT = FALSE)
+bcmvn_HIV112_V12 <- find.pK(sweep.stats_HIV112_V12)
+annotations <- HIV112_V12@meta.data$RNA_snn_res.0.5
+homotypic.prop <- modelHomotypic(annotations)
+nExp_poi <- round(0.075*nrow(HIV112_V12@meta.data))
+nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+HIV112_V12 <- doubletFinder_v3(HIV112_V12, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi, reuse.pANN = FALSE, sct = TRUE)
+head(HIV112_V12[[]])
+HIV112_V12 <- doubletFinder_v3(HIV112_V12, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi.adj, reuse.pANN = "pANN_0.25_0.09_1856", sct = TRUE)
+Idents(HIV112_V12) <- "DF.classifications_0.25_0.09_1856"
+DimPlot(HIV112_V12, reduction = "umap")
+HIV112_V12
+DF.name = colnames(HIV112_V12@meta.data)[grepl("DF.classifications_0.25_0.09_1856", colnames(HIV112_V12@meta.data))]
+HIV112_V12_singlet = HIV112_V12[,HIV112_V12@meta.data[,DF.name] == "Singlet"]
+HIV112_V12_singlet
+saveRDS(HIV112_V12_singlet, file = "C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV112_V12.rds")
+
+#HIV113_V1
+HIV113_V1.data <- Read10X(data.dir = "Raw data-all/HIV113_V1/filtered_feature_bc_matrix")
+HIV113_V1<-CreateSeuratObject(counts = HIV113_V1.data, project = "HIV113_V1", min.cells = 0, min.features = 200)
+HIV113_V1[["percent.mt"]] <- PercentageFeatureSet(HIV113_V1, pattern = "^MT-")
+HIV113_V1 <- subset(HIV113_V1, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt <25)
+HIV113_V1 <- NormalizeData(HIV113_V1, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV113_V1 <- FindVariableFeatures(HIV113_V1, selection.method = "vst", nfeatures = 2000)
+HIV113_V1 <- FindVariableFeatures(object = HIV113_V1, selection.method = "vst", nfeatures = 2000)
+HIV113_V1 <- ScaleData(object = HIV113_V1, verbose = FALSE)
+HIV113_V1 <- RunPCA(object = HIV113_V1, npcs = 30, verbose = FALSE)
+HIV113_V1 <- RunUMAP(object = HIV113_V1, reduction = "pca", dims = 1:20) 
+HIV113_V1 <- FindNeighbors(object = HIV113_V1, reduction = "pca", dims = 1:20)
+HIV113_V1 <- FindClusters(HIV113_V1, resolution = 0.5)
+DimPlot(HIV113_V1, reduction = "umap", label = TRUE, repel = TRUE, pt.size = 1)
+remotes::install_github('chris-mcginnis-ucsf/DoubletFinder')
+suppressMessages(require(DoubletFinder))
+sweep.res.list_HIV113_V1 <- paramSweep_v3(HIV113_V1, PCs = 1:10, sct = TRUE)
+sweep.stats_HIV113_V1 <- summarizeSweep(sweep.res.list_HIV113_V1, GT = FALSE)
+bcmvn_HIV113_V1 <- find.pK(sweep.stats_HIV113_V1)
+annotations <- HIV113_V1@meta.data$RNA_snn_res.0.5
+homotypic.prop <- modelHomotypic(annotations)
+nExp_poi <- round(0.075*nrow(HIV113_V1@meta.data))
+nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+HIV113_V1 <- doubletFinder_v3(HIV113_V1, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi, reuse.pANN = FALSE, sct = TRUE)
+head(HIV113_V1[[]])
+HIV113_V1 <- doubletFinder_v3(HIV113_V1, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi.adj, reuse.pANN = "pANN_0.25_0.09_817", sct = TRUE)
+Idents(HIV113_V1) <- "DF.classifications_0.25_0.09_817"
+DimPlot(HIV113_V1, reduction = "umap")
+HIV113_V1
+DF.name = colnames(HIV113_V1@meta.data)[grepl("DF.classifications_0.25_0.09_817", colnames(HIV113_V1@meta.data))]
+HIV113_V1_singlet = HIV113_V1[,HIV113_V1@meta.data[,DF.name] == "Singlet"]
+HIV113_V1_singlet
+saveRDS(HIV113_V1_singlet, file = "C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV113_V1.rds")
+
+#HIV113_V12
+HIV113_V12.data <- Read10X(data.dir = "Raw data-all/HIV113_V12/filtered_feature_bc_matrix")
+HIV113_V12<-CreateSeuratObject(counts = HIV113_V12.data, project = "HIV113_V12", min.cells = 0, min.features = 200)
+HIV113_V12[["percent.mt"]] <- PercentageFeatureSet(HIV113_V12, pattern = "^MT-")
+HIV113_V12 <- subset(HIV113_V12, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt <25)
+HIV113_V12 <- NormalizeData(HIV113_V12, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV113_V12 <- FindVariableFeatures(HIV113_V12, selection.method = "vst", nfeatures = 2000)
+HIV113_V12 <- FindVariableFeatures(object = HIV113_V12, selection.method = "vst", nfeatures = 2000)
+HIV113_V12 <- ScaleData(object = HIV113_V12, verbose = FALSE)
+HIV113_V12 <- RunPCA(object = HIV113_V12, npcs = 30, verbose = FALSE)
+HIV113_V12 <- RunUMAP(object = HIV113_V12, reduction = "pca", dims = 1:20) 
+HIV113_V12 <- FindNeighbors(object = HIV113_V12, reduction = "pca", dims = 1:20)
+HIV113_V12 <- FindClusters(HIV113_V12, resolution = 0.5)
+DimPlot(HIV113_V12, reduction = "umap", label = TRUE, repel = TRUE, pt.size = 1)
+remotes::install_github('chris-mcginnis-ucsf/DoubletFinder')
+suppressMessages(require(DoubletFinder))
+sweep.res.list_HIV113_V12 <- paramSweep_v3(HIV113_V12, PCs = 1:10, sct = TRUE)
+sweep.stats_HIV113_V12 <- summarizeSweep(sweep.res.list_HIV113_V12, GT = FALSE)
+bcmvn_HIV113_V12 <- find.pK(sweep.stats_HIV113_V12)
+annotations <- HIV113_V12@meta.data$RNA_snn_res.0.5
+homotypic.prop <- modelHomotypic(annotations)
+nExp_poi <- round(0.075*nrow(HIV113_V12@meta.data))
+nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+HIV113_V12 <- doubletFinder_v3(HIV113_V12, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi, reuse.pANN = FALSE, sct = TRUE)
+head(HIV113_V12[[]])
+HIV113_V12 <- doubletFinder_v3(HIV113_V12, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi.adj, reuse.pANN = "pANN_0.25_0.09_1641", sct = TRUE)
+Idents(HIV113_V12) <- "DF.classifications_0.25_0.09_1641"
+DimPlot(HIV113_V12, reduction = "umap")
+HIV113_V12
+DF.name = colnames(HIV113_V12@meta.data)[grepl("DF.classifications_0.25_0.09_1641", colnames(HIV113_V12@meta.data))]
+HIV113_V12_singlet = HIV113_V12[,HIV113_V12@meta.data[,DF.name] == "Singlet"]
+HIV113_V12_singlet
+saveRDS(HIV113_V12_singlet, file = "C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV113_V12.rds")
+
+#HC61
+HC61.data <- Read10X(data.dir = "Raw data-all/HC61/filtered_feature_bc_matrix")
+HC61<-CreateSeuratObject(counts = HC61.data, project = "HC61", min.cells = 0, min.features = 200)
+HC61[["percent.mt"]] <- PercentageFeatureSet(HC61, pattern = "^MT-")
+HC61 <- subset(HC61, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt <25)
+HC61 <- NormalizeData(HC61, normalization.method = "LogNormalize", scale.factor = 10000)
+HC61 <- FindVariableFeatures(HC61, selection.method = "vst", nfeatures = 2000)
+HC61 <- FindVariableFeatures(object = HC61, selection.method = "vst", nfeatures = 2000)
+HC61 <- ScaleData(object = HC61, verbose = FALSE)
+HC61 <- RunPCA(object = HC61, npcs = 30, verbose = FALSE)
+HC61 <- RunUMAP(object = HC61, reduction = "pca", dims = 1:20) 
+HC61 <- FindNeighbors(object = HC61, reduction = "pca", dims = 1:20)
+HC61 <- FindClusters(HC61, resolution = 0.5)
+DimPlot(HC61, reduction = "umap", label = TRUE, repel = TRUE, pt.size = 1)
+remotes::install_github('chris-mcginnis-ucsf/DoubletFinder')
+suppressMessages(require(DoubletFinder))
+sweep.res.list_HC61 <- paramSweep_v3(HC61, PCs = 1:10, sct = TRUE)
+sweep.stats_HC61 <- summarizeSweep(sweep.res.list_HC61, GT = FALSE)
+bcmvn_HC61 <- find.pK(sweep.stats_HC61)
+annotations <- HC61@meta.data$RNA_snn_res.0.5
+homotypic.prop <- modelHomotypic(annotations)
+nExp_poi <- round(0.075*nrow(HC61@meta.data))
+nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+HC61 <- doubletFinder_v3(HC61, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi, reuse.pANN = FALSE, sct = TRUE)
+head(HC61[[]])
+HC61 <- doubletFinder_v3(HC61, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi.adj, reuse.pANN = "pANN_0.25_0.09_767", sct = TRUE)
+Idents(HC61) <- "DF.classifications_0.25_0.09_767"
+DimPlot(HC61, reduction = "umap")
+HC61
+DF.name = colnames(HC61@meta.data)[grepl("DF.classifications_0.25_0.09_767", colnames(HC61@meta.data))]
+HC61_singlet = HC61[,HC61@meta.data[,DF.name] == "Singlet"]
+HC61_singlet
+saveRDS(HC61_singlet, file = "C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HC61.rds")
+
+#HC63
+HC63.data <- Read10X(data.dir = "Raw data-all/HC63/filtered_feature_bc_matrix")
+HC63<-CreateSeuratObject(counts = HC63.data, project = "HC63", min.cells = 0, min.features = 200)
+HC63[["percent.mt"]] <- PercentageFeatureSet(HC63, pattern = "^MT-")
+HC63 <- subset(HC63, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt <25)
+HC63 <- NormalizeData(HC63, normalization.method = "LogNormalize", scale.factor = 10000)
+HC63 <- FindVariableFeatures(HC63, selection.method = "vst", nfeatures = 2000)
+HC63 <- FindVariableFeatures(object = HC63, selection.method = "vst", nfeatures = 2000)
+HC63 <- ScaleData(object = HC63, verbose = FALSE)
+HC63 <- RunPCA(object = HC63, npcs = 30, verbose = FALSE)
+HC63 <- RunUMAP(object = HC63, reduction = "pca", dims = 1:20) 
+HC63 <- FindNeighbors(object = HC63, reduction = "pca", dims = 1:20)
+HC63 <- FindClusters(HC63, resolution = 0.5)
+DimPlot(HC63, reduction = "umap", label = TRUE, repel = TRUE, pt.size = 1)
+remotes::install_github('chris-mcginnis-ucsf/DoubletFinder')
+suppressMessages(require(DoubletFinder))
+sweep.res.list_HC63 <- paramSweep_v3(HC63, PCs = 1:10, sct = TRUE)
+sweep.stats_HC63 <- summarizeSweep(sweep.res.list_HC63, GT = FALSE)
+bcmvn_HC63 <- find.pK(sweep.stats_HC63)
+annotations <- HC63@meta.data$RNA_snn_res.0.5
+homotypic.prop <- modelHomotypic(annotations)
+nExp_poi <- round(0.075*nrow(HC63@meta.data))
+nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+HC63 <- doubletFinder_v3(HC63, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi, reuse.pANN = FALSE, sct = TRUE)
+head(HC63[[]])
+HC63 <- doubletFinder_v3(HC63, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi.adj, reuse.pANN = "pANN_0.25_0.09_1026", sct = TRUE)
+Idents(HC63) <- "DF.classifications_0.25_0.09_1026"
+DimPlot(HC63, reduction = "umap")
+HC63
+DF.name = colnames(HC63@meta.data)[grepl("DF.classifications_0.25_0.09_1026", colnames(HC63@meta.data))]
+HC63_singlet = HC63[,HC63@meta.data[,DF.name] == "Singlet"]
+HC63_singlet
+saveRDS(HC63_singlet, file = "C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HC63.rds")
+
+#HC65
+HC65.data <- Read10X(data.dir = "Raw data-all/HC65/filtered_feature_bc_matrix")
+HC65<-CreateSeuratObject(counts = HC65.data, project = "HC65", min.cells = 0, min.features = 200)
+HC65[["percent.mt"]] <- PercentageFeatureSet(HC65, pattern = "^MT-")
+HC65 <- subset(HC65, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt <25)
+HC65 <- NormalizeData(HC65, normalization.method = "LogNormalize", scale.factor = 10000)
+HC65 <- FindVariableFeatures(HC65, selection.method = "vst", nfeatures = 2000)
+HC65 <- FindVariableFeatures(object = HC65, selection.method = "vst", nfeatures = 2000)
+HC65 <- ScaleData(object = HC65, verbose = FALSE)
+HC65 <- RunPCA(object = HC65, npcs = 30, verbose = FALSE)
+HC65 <- RunUMAP(object = HC65, reduction = "pca", dims = 1:20) 
+HC65 <- FindNeighbors(object = HC65, reduction = "pca", dims = 1:20)
+HC65 <- FindClusters(HC65, resolution = 0.5)
+DimPlot(HC65, reduction = "umap", label = TRUE, repel = TRUE, pt.size = 1)
+remotes::install_github('chris-mcginnis-ucsf/DoubletFinder')
+suppressMessages(require(DoubletFinder))
+sweep.res.list_HC65 <- paramSweep_v3(HC65, PCs = 1:10, sct = TRUE)
+sweep.stats_HC65 <- summarizeSweep(sweep.res.list_HC65, GT = FALSE)
+bcmvn_HC65 <- find.pK(sweep.stats_HC65)
+annotations <- HC65@meta.data$RNA_snn_res.0.5
+homotypic.prop <- modelHomotypic(annotations)
+nExp_poi <- round(0.075*nrow(HC65@meta.data))
+nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+HC65 <- doubletFinder_v3(HC65, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi, reuse.pANN = FALSE, sct = TRUE)
+head(HC65[[]])
+HC65 <- doubletFinder_v3(HC65, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi.adj, reuse.pANN = "pANN_0.25_0.09_1489", sct = TRUE)
+Idents(HC65) <- "DF.classifications_0.25_0.09_1489"
+DimPlot(HC65, reduction = "umap")
+HC65
+DF.name = colnames(HC65@meta.data)[grepl("DF.classifications_0.25_0.09_1489", colnames(HC65@meta.data))]
+HC65_singlet = HC65[,HC65@meta.data[,DF.name] == "Singlet"]
+HC65_singlet
+saveRDS(HC65_singlet, file = "C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HC65.rds")
+
+#HC66
+HC66.data <- Read10X(data.dir = "Raw data-all/HC66/filtered_feature_bc_matrix")
+HC66<-CreateSeuratObject(counts = HC66.data, project = "HC66", min.cells = 0, min.features = 200)
+HC66[["percent.mt"]] <- PercentageFeatureSet(HC66, pattern = "^MT-")
+HC66 <- subset(HC66, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt <25)
+HC66 <- NormalizeData(HC66, normalization.method = "LogNormalize", scale.factor = 10000)
+HC66 <- FindVariableFeatures(HC66, selection.method = "vst", nfeatures = 2000)
+HC66 <- FindVariableFeatures(object = HC66, selection.method = "vst", nfeatures = 2000)
+HC66 <- ScaleData(object = HC66, verbose = FALSE)
+HC66 <- RunPCA(object = HC66, npcs = 30, verbose = FALSE)
+HC66 <- RunUMAP(object = HC66, reduction = "pca", dims = 1:20) 
+HC66 <- FindNeighbors(object = HC66, reduction = "pca", dims = 1:20)
+HC66 <- FindClusters(HC66, resolution = 0.5)
+DimPlot(HC66, reduction = "umap", label = TRUE, repel = TRUE, pt.size = 1)
+remotes::install_github('chris-mcginnis-ucsf/DoubletFinder')
+suppressMessages(require(DoubletFinder))
+sweep.res.list_HC66 <- paramSweep_v3(HC66, PCs = 1:10, sct = TRUE)
+sweep.stats_HC66 <- summarizeSweep(sweep.res.list_HC66, GT = FALSE)
+bcmvn_HC66 <- find.pK(sweep.stats_HC66)
+annotations <- HC66@meta.data$RNA_snn_res.0.5
+homotypic.prop <- modelHomotypic(annotations)
+nExp_poi <- round(0.075*nrow(HC66@meta.data))
+nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+HC66 <- doubletFinder_v3(HC66, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi, reuse.pANN = FALSE, sct = TRUE)
+head(HC66[[]])
+HC66 <- doubletFinder_v3(HC66, PCs = 1:10, pN = 0.25, pK = 0.09, nExp = nExp_poi.adj, reuse.pANN = "pANN_0.25_0.09_718", sct = TRUE)
+Idents(HC66) <- "DF.classifications_0.25_0.09_718"
+DimPlot(HC66, reduction = "umap")
+HC66
+DF.name = colnames(HC66@meta.data)[grepl("DF.classifications_0.25_0.09_718", colnames(HC66@meta.data))]
+HC66_singlet = HC66[,HC66@meta.data[,DF.name] == "Singlet"]
+HC66_singlet
+saveRDS(HC66_singlet, file = "C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HC66.rds")
+
+
+#### Figure 1
+
+library(Seurat)
+library(SeuratObject)
+HIV103_V1 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV103_V1.rds")
+HIV103_V1$sample <- "HIV103_V1"
+HIV103_V1$condition <- "HIV-1"
+HIV103_V1 <- NormalizeData(HIV103_V1, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV103_V1 <- FindVariableFeatures(HIV103_V1, selection.method = "vst", nfeatures = 2000)
+HIV103_V1 <- ScaleData(object = HIV103_V1, verbose = FALSE)
+
+HIV109_V1 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV109_V1.rds")
+HIV109_V1$sample <- "HIV109_V1"
+HIV109_V1$condition <- "HIV-1"
+HIV109_V1 <- NormalizeData(HIV109_V1, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV109_V1 <- FindVariableFeatures(HIV109_V1, selection.method = "vst", nfeatures = 2000)
+HIV109_V1 <- ScaleData(object = HIV109_V1, verbose = FALSE)
+
+HIV112_V1 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV112_V1.rds")
+HIV112_V1$sample <- "HIV112_V1"
+HIV112_V1$condition <- "HIV-1"
+HIV112_V1 <- NormalizeData(HIV112_V1, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV112_V1 <- FindVariableFeatures(HIV112_V1, selection.method = "vst", nfeatures = 2000)
+HIV112_V1 <- ScaleData(object = HIV112_V1, verbose = FALSE)
+
+HIV113_V1 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV113_V1.rds")
+HIV113_V1$sample <- "HIV113_V1"
+HIV113_V1$condition <- "HIV-1"
+HIV113_V1 <- NormalizeData(HIV113_V1, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV113_V1 <- FindVariableFeatures(HIV113_V1, selection.method = "vst", nfeatures = 2000)
+HIV113_V1 <- ScaleData(object = HIV113_V1, verbose = FALSE)
+
+HC61 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HC61.rds")
+HC61$sample <- "HC61"
+HC61$condition <- "H_control"
+HC61 <- NormalizeData(HC61, normalization.method = "LogNormalize", scale.factor = 10000)
+HC61 <- FindVariableFeatures(HC61, selection.method = "vst", nfeatures = 2000)
+HC61 <- ScaleData(object = HC61, verbose = FALSE)
+HC63 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HC63.rds")
+HC63$sample <- "HC63"
+HC63$condition <- "H_control"
+HC63 <- NormalizeData(HC63, normalization.method = "LogNormalize", scale.factor = 10000)
+HC63 <- FindVariableFeatures(HC63, selection.method = "vst", nfeatures = 2000)
+HC63 <- ScaleData(object = HC63, verbose = FALSE)
+HC65 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HC65.rds")
+HC65$sample <- "HC65"
+HC65$condition <- "H_control"
+HC65 <- NormalizeData(HC65, normalization.method = "LogNormalize", scale.factor = 10000)
+HC65 <- FindVariableFeatures(HC65, selection.method = "vst", nfeatures = 2000)
+HC65 <- ScaleData(object = HC65, verbose = FALSE)
+HC66 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HC66.rds")
+HC66$sample <- "HC66"
+HC66$condition <- "H_control"
+HC66 <- NormalizeData(HC66, normalization.method = "LogNormalize", scale.factor = 10000)
+HC66 <- FindVariableFeatures(HC66, selection.method = "vst", nfeatures = 2000)
+HC66 <- ScaleData(object = HC66, verbose = FALSE)
+
+anchors <- FindIntegrationAnchors(object.list = list(HC61, HC63, HC65, HC66, HIV112_V1, HIV113_V1, HIV109_V1, HIV103_V1), dims = 1:20)
+control_HIV <- IntegrateData(anchorset = anchors, dims = 1:20)
+DefaultAssay(object = control_HIV) <- "integrated"
+saveRDS(control_HIV, file = "C:/Users/au672897/Desktop/pDC Sequence data/pDC only/control_HIV.rds")
+control_HIV <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/pDC only/control_HIV.rds")
+#control_HIV <- NormalizeData(control_HIV, normalization.method = "LogNormalize", scale.factor = 10000)
+control_HIV <- ScaleData(object = control_HIV, verbose = FALSE)
+control_HIV <- RunPCA(object = control_HIV, npcs = 30, verbose = FALSE)
+control_HIV <- RunUMAP(object = control_HIV, reduction = "pca", dims = 1:20) 
+control_HIV <- FindNeighbors(object = control_HIV, reduction = "pca", dims = 1:20)
+control_HIV <- FindClusters(control_HIV, resolution = 0.5)
+DimPlot(control_HIV, reduction = "umap", label = TRUE, repel = TRUE, raster=FALSE, label.size = 10, pt.size = 0.5) + theme(text = element_text(size = 15)) + NoLegend()
+VlnPlot(control_HIV, features = c("CLEC4C", "IL3RA"), pt.size = 0)
+FeaturePlot(control_HIV, features = c("CLEC4C", "IL3RA", "LILRA4"), raster=FALSE)
+
+new.cluster.ids <- c("pDC","pDC","pDC", "B cells", "pDC","pDC", "NK/NKT cells","Erythroid-like cells", "T cells","Monocytes","T cells","Platelet","B cells","pDC","Platelet", "NK/NKT cells", "NK/NKT cells")
+                      
+names(new.cluster.ids) <- levels(control_HIV)
+control_HIV <- RenameIdents(control_HIV, new.cluster.ids)
+
+Idents(control_HIV) <- "snn_res.0.3"
+
+DefaultAssay(control_HIV) <- "RNA"
+library(dplyr)
+control_HIV.markers <- FindAllMarkers(control_HIV, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+control_HIV <- ScaleData(object = control_HIV, verbose = FALSE)
+top10 <- head(VariableFeatures(control_HIV), 10)
+top10 <- control_HIV.markers %>% group_by(cluster) %>% top_n(10, avg_log2FC)
+DoHeatmap(control_HIV, features = top10$gene)
+
+features<- c('CLEC4C', 'LILRA4', 'IL3RA', 'IL7R','IGHA1', 'IGKC', 'IGLC2', 'CD3G', 'CD3D', 'CCR7', 'CD14','FCGR3A', 'MS4A7', 'LYZ', 'MS4A1', 'CD8A', 'GNLY', 'NKG7', 'PPBP') 
+DotPlot(control_HIV, features = features, cols = c("blue", "red", "green"), dot.scale = 15) + RotatedAxis() + theme(axis.text = element_text(size = 20))
+
+
+ggsave("lamin.png", height = 7, width = 15)
+
+control_HIV$pDC <- "other"
+control_HIV$pDC[which(control_HIV$integrated_snn_res.0.3 %in% c(0,1,2))] <- "pDC"
+Idents(object = control_HIV) <- "pDC"
+Idents(object = control_HIV, cells = 1:10) <- "pDC"
+control_HIV_pDC <- subset(control_HIV, idents = "pDC")
+control_HIV
+control_HIV_pDC
+saveRDS(control_HIV_pDC, file = "C:/Users/au672897/Desktop/pDC Sequence data/pDC only/control_HIV_pDC.rds")
+
+
+library(Seurat)
+library(SeuratObject)
+library(dplyr)
+library(pheatmap)
+library(BiocManager)
+library(multtest)
+library(metap)
+library(limma)
+library(ggplot2)
+library(cowplot)
+theme_set(theme_cowplot())
+library(Signac)
+library(monocle3)
+library(Matrix)
+library(patchwork)
+set.seed(1234)
+library(SCORPIUS)
+library(patchwork)
+library(tidyverse)
+library(magrittr)
+library(ReactomePA)
+library(clusterProfiler)
+library(enrichplot)
+library(DOSE)
+library(biomaRt)
+library(org.Hs.eg.db)
+library(ChIPseeker)
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+library(monocle)
+library(ggrepel)
+library(EnhancedVolcano)
+library(Nebulosa)
+library(BiocFileCache)
+library(RColorBrewer)
+
+control_HIV_pDC <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/pDC only/control_HIV_pDC.rds")
+control_HIV_pDC <- FindVariableFeatures(object = control_HIV_pDC, selection.method = "vst", nfeatures = 1000)
+control_HIV_pDC <- ScaleData(object = control_HIV_pDC, features = rownames(control_HIV_pDC), verbose = FALSE)
+control_HIV_pDC <- RunPCA(object = control_HIV_pDC, npcs = 30, verbose = FALSE)
+control_HIV_pDC <- RunUMAP(object = control_HIV_pDC, reduction = "pca", dims = 1:20) 
+control_HIV_pDC <- FindNeighbors(object = control_HIV_pDC, reduction = "pca", dims = 1:20)
+control_HIV_pDC <- FindClusters(control_HIV_pDC, resolution = 0.2)
+control_HIV_pDC<-RenameIdents(control_HIV_pDC, "0"= "pDC1", "1"= "pDC2", "2"= "Exhausted pDC")
+DimPlot(control_HIV_pDC, reduction = "umap", pt.size = 0.5, raster=FALSE , repel = TRUE, label = TRUE, label.size = 12) + theme(text = element_text(size = 25)) + NoLegend()
+control_HIV_pDC <- RunTSNE(object = control_HIV_pDC)
+DimPlot(object = control_HIV_pDC, reduction = "tsne", label = TRUE, repel = TRUE, split.by = "condition", label.size = 12) + theme(text = element_text(size = 25)) + NoLegend()
+#ggsave("pic1.png", height = 8, width = 8)
+DefaultAssay(control_HIV_pDC) <- "RNA"
+control_HIV_pDC.markers <- FindAllMarkers(control_HIV_pDC, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+control_HIV_pDC <- ScaleData(object = control_HIV_pDC, features = rownames(control_HIV_pDC), verbose = FALSE)
+top10 <- head(VariableFeatures(control_HIV_pDC), 10)
+top10 <- control_HIV_pDC.markers %>% group_by(cluster) %>% top_n(10, avg_log2FC)
+DoHeatmap(control_HIV_pDC, features = top10$gene)
+FeaturePlot(control_HIV_pDC, features = c("CLEC4C", "IL3RA", "LILRA4", "MZB1", "CD3G", "SIRPA"), raster=FALSE, pt.size = 1)
+VlnPlot(control_HIV_pDC, features = c("IL3RA", "AXL", "SIGLEC6"), raster=FALSE, pt.size = 0) + theme(axis.title.x = element_blank())
+
+ave <- AverageExpression(control_HIV_pDC)$RNA
+cor.exp1 <- as.data.frame(cor(ave))
+pheatmap(cor.exp1,fontsize = 30, border_color = NA, clustering_distance_cols= "correlation", clustering_distance_rows= "correlation")
+
+allcluster<- c("HLA-E", "HLA-DB5", "HLA-DB1", "HLA-DRA", "HLA-DQB1", "HLA-DQA1", "HLA-DPA1", "HLA-DMA", "CD5", "CD81", "BST2", "MT-CO1", "MT-CO3", "MT-CO3", "MT-ATP6", "NRP1", "S100A8", "MX1", "PRF1", "JCHAIN", "IRF8", "BCL11A", "DERL3", "GPR183", "PTCRA", "FAM129C", "SPIB", "IRF7", "MAP3K", "GZM", "IGJ", "AK128525", "SERPINF1", "ITM2C", "TCF4", "BCL11A", "LILRA4","TNFAIP2", "CLEC4C", "IL3RA", "MZB1", "RPL23", "PLEK", "RPS11", "SERBP1", "SET", "TPM3", "RPS17", "RPS20", "MTPN", "PTGDS", "FCER1G", "FTL", "RPS5", "NACA", "RPL19", "RPL29", "CLIC3", "PLCG2", "MT-ND1", "MT-ND5", "MT-ATP6", "MT-ND2", "MT-ND4", "MT-CO1", "MALAT1", "OGT", "ISG15", "LY6E", "IFI6", "ISG20", "IFI44L", "OAS1", "OAS3", "PARP12")
+ave <- AverageExpression(control_HIV_pDC)$RNA
+gene <- intersect(rownames(ave), allcluster)
+ave_lamin <- ave[gene,]
+colfunc<-colorRampPalette(c("blue3","gray96","red3"))
+pheatmap(ave_lamin, col=(colfunc(100)), scale="row",border_color=NA, fontsize = 30)
+pheatmap(ave_lamin, scale="row", border_color=NA, fontsize = 20)
+
+Idents(control_HIV_pDC) <- "sample"
+all <- c( "TLR9", "TLR7", "TNF", "ZFP36", "SPARC", "TNFSF4", "PF4V1", "CXCL3", "CXCL5", "PPBP", "CCL5", "CCL3", "CCL2", "CCRL2", "CCL4", "CXCR2", "FFAR2", "TNFSF14", "IL1B", "IL1RN", "SERPINE1", "PDE4D", "TNFAIP3", "NLRP3", "TRIB1", "NFKBIA", "JUND", "JUN", "FOS", "F2R", "PTGS2", "EIF1", "DUSP1", "AREG", "BTG1", "KLF6", "LAPTM5",  "MYD88", "CD36", "LIPA", "RETN", "ANXA2","MAPK1", "TNFRSF21", "TNFAIP2", "IL10RB", "CD40", "CD38", "CD81", "HLA-DRA", "HLA-DMA", "HLA-C", "HLA-A", "HLA-E", "HLA-B", "HLA-F", "B2M", "USP8", "USP15", "USP24", "USP48", "USP3", "SLAMF7", "SOX4", "UFM1", "ARMCX3", "TPR", "AHI1", "UBTF", "LINC02812", "CLINT1", "TMEM123", "NEK8", "OXR1", "TMX3" )
+lamin<- c("TLR9", "TLR7","STAT1", "STAT2", "IRF7", "ISG15", "LY6E", "IFI6", "ISG20", "MX1", "OAS1", "OAS2", "OAS3", "PARP12",  "IFIT2", "IFIT3", "IFIT5",  "RBBP6", "SHFL", "TRIM22", "TRIM25", "TRIM32", "TRIM69",  "IRF1", "IRF3", "IRF9", "CGAS", "USP18", "SOCS1", "SOCS3", "IFITM2", "IFNL1", "IFNLR1", "IFNAR1", "IFNAR2", "IFNGR1", "IL10RB", "CD40", "CD38", "CD81", "HLA-DRA", "HLA-DMA", "HLA-C", "HLA-A", "HLA-E", "HLA-B", "HLA-F", "B2M", "USP8", "USP15", "USP24", "USP48", "USP3", "SLAMF7", "SOX4",  "ARMCX3", "TPR", "AHI1", "UBTF", "LINC02812", "CLINT1", "TMEM123", "NEK8", "OXR1", "TMX3")
+ave <- AverageExpression(control_HIV_pDC)$RNA
+gene <- intersect(rownames(ave), lamin)
+ave_lamin <- ave[gene,]
+colfunc<-colorRampPalette(c("blue3","gray96","red3"))
+pheatmap(ave_lamin, col=(colfunc(100)), scale="row",border_color=NA, fontsize = 20)
+
+Idents(control_HIV_pDC) <- "condition"
+DefaultAssay(control_HIV_pDC) <- "RNA"
+control_HIV_pDC <- ScaleData(object = control_HIV_pDC, features = rownames(control_HIV_pDC), verbose = FALSE)
+#HIV_vs_control <- FindMarkers(control_HIV_pDC, ident.1 = "HIV-1", ident.2 = "H_control", min.pct = 0, logfc.threshold = 0)
+#saveRDS(HIV_vs_control, file = "C:/Users/au672897/Desktop/pDC Sequence data/pDC only/HIV_vs_control.rds" )
+control_HIV_pDC <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/pDC only/HIV_vs_control.rds")
+EnhancedVolcano(control_HIV_pDC, lab = rownames(control_HIV_pDC), x = "avg_log2FC", y = "p_val_adj", xlab = bquote(~avg_Log[2]~ 'fold change'),  title = "HIV-1 vs H_control", subtitle = bquote(italic("avg_log2FC")), labSize = 5, pointSize = 2, axisLabSize=30, titleLabSize=25, subtitleLabSize=20, captionLabSize=15, legendPosition = "none", pCutoff = 10e-100,  FCcutoff = 0.05, col=c('grey', 'grey', 'grey', 'red3'), colAlpha = 0.9, xlim = c(-1, 1),ylim = c(0,310))
+
+top100_control_HIV_pDC <- slice_max(control_HIV_pDC, n = 100, order_by = avg_log2FC)
+top100gene_control_HIV_pDC <- rownames(top100_control_HIV_pDC)
+top100gene_control_HIV_pDC
+go_enrich <- enrichGO(gene =top100gene_control_HIV_pDC , OrgDb = "org.Hs.eg.db",  keyType = 'SYMBOL', readable = T, ont = "BP", pvalueCutoff = 0.05, qvalueCutoff = 0.05)
+write.csv(go_enrich,"GO.csv")
+go_enrich@result
+go_enrich@result %>% head()
+
+go_enrich@result %>%
+  filter(Description== "response to virus" |
+           Description=="regulation of viral process" | 
+           Description=="positive regulation of cytokine production"|
+           Description=="regulation of innate immune response"|
+           Description== "regulation of B cell activation" |
+           Description=="T cell mediated cytotoxicity" |
+           Description=="chemokine-mediated signaling pathway" |
+           Description=="regulation of natural killer cell mediated immunity" |
+           Description=="CD8-positive, alpha-beta T cell activation" |
+           Description=="natural killer cell mediated cytotoxicity" |
+           Description=="negative regulation of viral process" |
+           Description=="type I interferon production" |
+           Description=="complement activation, classical pathway" |
+           Description=="cellular response to type I interferon" |
+           Description=="lymphocyte mediated immunity"|
+           Description== "B cell activation" |
+           Description=="positive regulation of cell activation" |
+           Description=="regulation of innate immune response" |
+           Description=="regulation of adaptive immune response" |
+           Description=="response to interferon-beta" |
+           Description=="T cell cytokine production" )%>%
+  arrange(desc(p.adjust)) %>%
+  ggplot(aes(y=factor(Description), x= Count, fill= p.adjust)) +
+  geom_bar(stat = "identity", width = 0.7, size=20)  + 
+  theme(axis.text.y = element_text(size=20),
+        axis.title.y = element_blank()) +
+  scale_fill_gradient (low= "blue", high= "red") +
+  ggtitle("GO analysis for HIV-1 vs H_control") + theme(title = element_text(size = 17))
+
+saveRDS(control_HIV_pDC, file = "C:/Users/au672897/Desktop/Manuscript pDC/Figures and scripts/aaGEO/Processed/Figure 1_processed.rds" )
+
+
+#### Figure 2
+
+library(Seurat)
+library(SeuratObject)
+library(dplyr)
+library(pheatmap)
+library(BiocManager)
+library(multtest)
+library(metap)
+library(limma)
+library(ggplot2)
+  
+  
+HIV103_V1 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV103_V1.rds")
+HIV103_V1$sample <- "HIV103_V1"
+HIV103_V1$condition <- "HIV-1"
+HIV103_V1 <- NormalizeData(HIV103_V1, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV103_V1 <- FindVariableFeatures(HIV103_V1, selection.method = "vst", nfeatures = 2000)
+HIV103_V1 <- ScaleData(object = HIV103_V1, verbose = FALSE)
+
+HIV109_V1 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV109_V1.rds")
+HIV109_V1$sample <- "HIV109_V1"
+HIV109_V1$condition <- "HIV-1"
+HIV109_V1 <- NormalizeData(HIV109_V1, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV109_V1 <- FindVariableFeatures(HIV109_V1, selection.method = "vst", nfeatures = 2000)
+HIV109_V1 <- ScaleData(object = HIV109_V1, verbose = FALSE)
+
+HIV112_V1 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV112_V1.rds")
+HIV112_V1$sample <- "HIV112_V1"
+HIV112_V1$condition <- "HIV-1"
+HIV112_V1 <- NormalizeData(HIV112_V1, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV112_V1 <- FindVariableFeatures(HIV112_V1, selection.method = "vst", nfeatures = 2000)
+HIV112_V1 <- ScaleData(object = HIV112_V1, verbose = FALSE)
+
+HIV113_V1 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV113_V1.rds")
+HIV113_V1$sample <- "HIV113_V1"
+HIV113_V1$condition <- "HIV-1"
+HIV113_V1 <- NormalizeData(HIV113_V1, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV113_V1 <- FindVariableFeatures(HIV113_V1, selection.method = "vst", nfeatures = 2000)
+HIV113_V1 <- ScaleData(object = HIV113_V1, verbose = FALSE)
+
+HIV103_V12 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV103_V12.rds")
+HIV103_V12$sample <- "HIV103_V12"
+HIV103_V12$condition <- "HIV-1 + TLR9a"
+HIV103_V12 <- NormalizeData(HIV103_V12, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV103_V12 <- FindVariableFeatures(HIV103_V12, selection.method = "vst", nfeatures = 2000)
+HIV103_V12 <- ScaleData(object = HIV103_V12, verbose = FALSE)
+
+HIV109_V12 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV109_V12.rds")
+HIV109_V12$sample <- "HIV109_V12"
+HIV109_V12$condition <- "HIV-1 + TLR9a"
+HIV109_V12 <- NormalizeData(HIV109_V12, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV109_V12 <- FindVariableFeatures(HIV109_V12, selection.method = "vst", nfeatures = 2000)
+HIV109_V12 <- ScaleData(object = HIV109_V12, verbose = FALSE)
+
+HIV112_V12 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV112_V12.rds")
+HIV112_V12$sample <- "HIV112_V12"
+HIV112_V12$condition <- "HIV-1 + TLR9a"
+HIV112_V12 <- NormalizeData(HIV112_V12, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV112_V12 <- FindVariableFeatures(HIV112_V12, selection.method = "vst", nfeatures = 2000)
+HIV112_V12 <- ScaleData(object = HIV112_V12, verbose = FALSE)
+
+HIV113_V12 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV113_V12.rds")
+HIV113_V12$sample <- "HIV113_V12"
+HIV113_V12$condition <- "HIV-1 + TLR9a"
+HIV113_V12 <- NormalizeData(HIV113_V12, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV113_V12 <- FindVariableFeatures(HIV113_V12, selection.method = "vst", nfeatures = 2000)
+HIV113_V12 <- ScaleData(object = HIV113_V12, verbose = FALSE)
+
+
+anchors <- FindIntegrationAnchors(object.list = list(HIV112_V1, HIV113_V1, HIV109_V1, HIV103_V1, HIV112_V12, HIV113_V12, HIV109_V12, HIV103_V12), dims = 1:20)
+HIV_TLR9 <- IntegrateData(anchorset = anchors, dims = 1:20)
+DefaultAssay(object = HIV_TLR9) <- "integrated"
+saveRDS(HIV_TLR9, file = "C:/Users/au672897/Desktop/pDC Sequence data/pDC only/HIV_TLR9.rds")
+HIV_TLR9 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/pDC only/HIV_TLR9.rds")
+#HIV_TLR9 <- NormalizeData(HIV_TLR9, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV_TLR9 <- ScaleData(object = HIV_TLR9, verbose = FALSE)
+HIV_TLR9 <- RunPCA(object = HIV_TLR9, npcs = 30, verbose = FALSE)
+HIV_TLR9 <- RunUMAP(object = HIV_TLR9, reduction = "pca", dims = 1:20) 
+HIV_TLR9 <- FindNeighbors(object = HIV_TLR9, reduction = "pca", dims = 1:20)
+HIV_TLR9 <- FindClusters(HIV_TLR9, resolution = 0.2)
+DimPlot(HIV_TLR9, reduction = "umap", label = TRUE, repel = TRUE, raster=FALSE, label.size = 10, pt.size = 0.5) + theme(text = element_text(size = 25)) + NoLegend()
+saveRDS(HIV_TLR9, file = "C:/Users/au672897/Desktop/pDC Sequence data/pDC only/HIV_TLR9.rds")
+
+VlnPlot(HIV_TLR9, features = c("CLEC4C", "IL3RA"), pt.size = 0)
+FeaturePlot(HIV_TLR9, features = c("CLEC4C", "IL3RA", "LILRA4"), raster=FALSE)
+DotPlot(HIV_TLR9, features = features, cols = c("blue", "red", "green"), dot.scale = 15) + RotatedAxis()
+
+
+new.cluster.ids <- c("pDC","pDC",  "B cells",  "T cells", "NK cells", "Erythroid-like cells","Erythroid-like cells","Platelet", "Monocytes", "Erythroid-like cells","Erythroid-like cells","pDC")
+                     
+names(new.cluster.ids) <- levels(HIV_TLR9)
+HIV_TLR9 <- RenameIdents(HIV_TLR9, new.cluster.ids)
+features<- c('CLEC4C', 'LILRA4', 'IL3RA', 'IL7R','IGHA1', 'IGKC', 'IGLC2', 'CD3G', 'CD3D', 'CCR7', 'CD14','FCGR3A', 'MS4A7', 'LYZ', 'MS4A1', 'CD8A', 'GNLY', 'NKG7', 'PPBP') 
+DotPlot(HIV_TLR9, features = features, cols = c("blue", "red", "green"), dot.scale = 15) + RotatedAxis()
+
+ggsave("pic1.png", height = 7, width = 10 )
+
+DefaultAssay(HIV_TLR9) <- "RNA"
+library(dplyr)
+HIV_TLR9.markers <- FindAllMarkers(HIV_TLR9, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+HIV_TLR9 <- ScaleData(object = HIV_TLR9, verbose = FALSE)
+top10 <- head(VariableFeatures(HIV_TLR9), 10)
+top10 <- HIV_TLR9.markers %>% group_by(cluster) %>% top_n(10, avg_log2FC)
+DoHeatmap(HIV_TLR9, features = top10$gene)
+
+HIV_TLR9$pDC <- "other"
+HIV_TLR9$pDC[which(HIV_TLR9$integrated_snn_res.0.3 %in% c(0,1,2, 13))] <- "pDC"
+Idents(object = HIV_TLR9) <- "pDC"
+Idents(object = HIV_TLR9, cells = 1:10) <- "pDC"
+HIV_TLR9_pDC <- subset(HIV_TLR9, idents = "pDC")
+HIV_TLR9
+HIV_TLR9_pDC
+saveRDS(HIV_TLR9_pDC, file = "C:/Users/au672897/Desktop/pDC Sequence data/pDC only/HIV_TLR9_pDC.rds")
+
+
+library(Seurat)
+library(SeuratObject)
+library(dplyr)
+library(pheatmap)
+library(BiocManager)
+library(multtest)
+library(metap)
+library(limma)
+library(ggplot2)
+library(cowplot)
+theme_set(theme_cowplot())
+library(Signac)
+library(monocle3)
+library(Matrix)
+library(patchwork)
+set.seed(1234)
+library(SCORPIUS)
+library(patchwork)
+library(tidyverse)
+library(magrittr)
+library(ReactomePA)
+library(clusterProfiler)
+library(enrichplot)
+library(DOSE)
+library(biomaRt)
+library(org.Hs.eg.db)
+library(ChIPseeker)
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+library(monocle)
+library(ggrepel)
+library(EnhancedVolcano)
+library(Nebulosa)
+library(BiocFileCache)
+library(RColorBrewer)
+
+HIV_TLR9_pDC <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/pDC only/HIV_TLR9_pDC.rds")
+HIV_TLR9_pDC <- FindVariableFeatures(object = HIV_TLR9_pDC, selection.method = "vst", nfeatures = 2000)
+HIV_TLR9_pDC <- ScaleData(object = HIV_TLR9_pDC, features = rownames(HIV_TLR9_pDC), verbose = FALSE)
+HIV_TLR9_pDC <- RunPCA(object = HIV_TLR9_pDC, npcs = 30, verbose = FALSE)
+HIV_TLR9_pDC <- RunUMAP(object = HIV_TLR9_pDC, reduction = "pca", dims = 1:20) 
+HIV_TLR9_pDC <- FindNeighbors(object = HIV_TLR9_pDC, reduction = "pca", dims = 1:20)
+HIV_TLR9_pDC <- FindClusters(HIV_TLR9_pDC, resolution = 0.2)
+DimPlot(HIV_TLR9_pDC, reduction = "umap", pt.size = 0.5, raster=FALSE , repel = TRUE, label = TRUE, label.size = 12)+ theme(text = element_text(size = 25))
+
+HIV_TLR9_pDC<-RenameIdents(HIV_TLR9_pDC, "0"= "pDC1", "1"= "pDC2", "2"= "Exhausted pDC", "3"= "Cytotoxic-like pDC")
+DimPlot(HIV_TLR9_pDC, reduction = "umap", pt.size = 0.5, raster=FALSE , repel = TRUE, label = TRUE, label.size = 13)+ theme(text = element_text(size = 25)) + NoLegend()
+
+HIV_TLR9_pDC <- RunTSNE(object = HIV_TLR9_pDC)
+DimPlot(object = HIV_TLR9_pDC, reduction = "tsne", label = TRUE, repel = TRUE, split.by = "condition", label.size = 8) + theme(text = element_text(size = 25)) + NoLegend()
+#ggsave("pic1.png", height = 8, width = 13 )
+DefaultAssay(HIV_TLR9_pDC) <- "RNA"
+HIV_TLR9_pDC.markers <- FindAllMarkers(HIV_TLR9_pDC, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+HIV_TLR9_pDC <- ScaleData(object = HIV_TLR9_pDC, features = rownames(HIV_TLR9_pDC), verbose = FALSE)
+top10 <- head(VariableFeatures(HIV_TLR9_pDC), 10)
+top10 <- HIV_TLR9_pDC.markers %>% group_by(cluster) %>% top_n(10, avg_log2FC)
+DoHeatmap(HIV_TLR9_pDC, features = top10$gene)
+FeaturePlot(HIV_TLR9_pDC, features = c("CLEC4C", "IL3RA", "LILRA4", "MZB1", "CD3G", "SIRPA"), raster=FALSE, pt.size = 1)
+VlnPlot(HIV_TLR9_pDC, features = c("IL3RA", "AXL", "SIGLEC6"), raster=FALSE, pt.size = 0)
+ave <- AverageExpression(HIV_TLR9_pDC)$RNA
+cor.exp1 <- as.data.frame(cor(ave))
+pheatmap(cor.exp1,fontsize = 30, border_color = NA, clustering_distance_cols= "correlation", clustering_distance_rows= "correlation")
+
+allcluster<- c("HLA-E", "HLA-DB5", "HLA-DB1", "HLA-DRA", "HLA-DQA1", "HLA-DPA1", "HLA-DMA", "CD5", "CD81", "BST2", "MT-CO1", "MT-CO3", "MT-CO3", "MT-ATP6", "NRP1", "S100A8", "MX1", "PRF1", "JCHAIN", "IRF8", "BCL11A", "DERL3", "GPR183", "PTCRA", "FAM129C", "SPIB", "IRF7", "MAP3K", "GZM", "IGJ", "AK128525", "SERPINF1", "ITM2C", "TCF4", "BCL11A", "LILRA4","TNFAIP2", "CLEC4C", "IL3RA", "MZB1", "RPL23", "PLEK", "RPS11", "SERBP1", "SET", "TPM3", "RPS17", "RPS20", "MTPN", "PTGDS", "FCER1G", "FTL", "RPS5", "NACA", "RPL19", "RPL29", "CLIC3", "PLCG2", "MT-ND1", "MT-ND5", "MT-ATP6", "MT-ND2", "MT-ND4", "MT-CO1", "MALAT1", "OGT", "ISG15", "LY6E", "IFI6", "ISG20", "IFI44L", "OAS1", "OAS3", "PARP12", "NKG7", "GNLY","PRF1","TNFSF10", "KLRB1", "GZMK")
+ave <- AverageExpression(HIV_TLR9_pDC)$RNA
+gene <- intersect(rownames(ave), allcluster)
+ave_lamin <- ave[gene,]
+colfunc<-colorRampPalette(c("blue3","gray96","red3"))
+pheatmap(ave_lamin, col=(colfunc(100)), scale="row",border_color=NA, fontsize = 30)
+
+Idents(HIV_TLR9_pDC) <- "sample"
+all <- c( "TLR9", "TLR7", "TNF", "ZFP36", "SPARC", "TNFSF4", "PF4V1", "CXCL3", "CXCL5", "PPBP", "CCL5", "CCL3", "CCL2", "CCRL2", "CCL4", "CXCR2", "FFAR2", "TNFSF14", "IL1B", "IL1RN", "SERPINE1", "PDE4D", "TNFAIP3", "NLRP3", "TRIB1", "NFKBIA", "JUND", "JUN", "FOS", "F2R", "PTGS2", "EIF1", "DUSP1", "AREG", "BTG1", "KLF6", "LAPTM5",  "MYD88", "CD36", "LIPA", "RETN", "ANXA2","MAPK1", "TNFRSF21", "TNFAIP2", "IL10RB", "CD40", "CD38", "CD81", "HLA-DRA", "HLA-DMA", "HLA-C", "HLA-A", "HLA-E", "HLA-B", "HLA-F", "B2M", "USP8", "USP15", "USP24", "USP48", "USP3", "SLAMF7", "SOX4", "UFM1", "ARMCX3", "TPR", "AHI1", "UBTF", "LINC02812", "CLINT1", "TMEM123", "NEK8", "OXR1", "TMX3" )
+lamin<- c("TLR9", "TLR7","STAT1", "STAT2", "IRF7", "ISG15", "LY6E", "IFI6", "ISG20", "MX1", "OAS1", "OAS2", "OAS3", "PARP12",  "IFIT2", "IFIT3", "IFIT5",  "RBBP6", "SHFL", "TRIM22", "TRIM25", "TRIM32", "TRIM69",  "IRF1", "IRF3", "IRF9", "CGAS", "USP18", "SOCS1", "SOCS3", "IFITM2", "IFNL1", "IFNLR1", "IFNAR1", "IFNAR2", "IFNGR1", "IL10RB", "CD40", "CD38", "CD81", "HLA-DRA", "HLA-DMA", "HLA-C", "HLA-A", "HLA-E", "HLA-B", "HLA-F", "B2M", "USP8", "USP15", "USP24", "USP48", "USP3", "SLAMF7", "SOX4",  "ARMCX3", "TPR", "AHI1", "UBTF", "LINC02812", "CLINT1", "TMEM123", "NEK8", "OXR1", "TMX3")
+ave <- AverageExpression(HIV_TLR9_pDC)$RNA
+gene <- intersect(rownames(ave), lamin)
+ave_lamin <- ave[gene,]
+colfunc<-colorRampPalette(c("blue3","gray96","red3"))
+pheatmap(ave_lamin, col=(colfunc(100)), scale="row",border_color=NA, fontsize = 20)
+
+Idents(HIV_TLR9_pDC) <- "condition"
+DefaultAssay(HIV_TLR9_pDC) <- "RNA"
+HIV_TLR9_pDC <- ScaleData(object = HIV_TLR9_pDC, features = rownames(HIV_TLR9_pDC), verbose = FALSE)
+#HIV_vs_control <- FindMarkers(HIV_TLR9_pDC, ident.1 = "HIV-1", ident.2 = "H_control", min.pct = 0, logfc.threshold = 0)
+#saveRDS(HIV_vs_control, file = "C:/Users/au672897/Desktop/pDC Sequence data/pDC only/HIV_vs_control.rds" )
+HIV_TLR9_pDC <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/pDC only/TLR9_vs_HIV.rds")
+EnhancedVolcano(HIV_TLR9_pDC, lab = rownames(HIV_TLR9_pDC), x = "avg_log2FC", y = "p_val_adj", xlab = bquote(~avg_Log[2]~ 'fold change'),  title = "HIV-1+TLR9a vs HIV-1 basel", subtitle = bquote(italic("avg_log2FC")), labSize = 5, pointSize = 2, axisLabSize=30, titleLabSize=25, subtitleLabSize=20, captionLabSize=15, legendPosition = "none", pCutoff = 10e-100,  FCcutoff = 0.05, col=c('grey', 'grey', 'grey', 'red3'), colAlpha = 0.9, xlim = c(-1, 1),ylim = c(0,310))
+
+top100_HIV_TLR9_pDC <- slice_max(HIV_TLR9_pDC, n = 100, order_by = avg_log2FC)
+top100gene_HIV_TLR9_pDC <- rownames(top100_HIV_TLR9_pDC)
+top100gene_HIV_TLR9_pDC
+go_enrich <- enrichGO(gene =top100gene_HIV_TLR9_pDC , OrgDb = "org.Hs.eg.db",  keyType = 'SYMBOL', readable = T, ont = "BP", pvalueCutoff = 0.05, qvalueCutoff = 0.05)
+write.csv(go_enrich,"GO.csv")
+go_enrich@result
+go_enrich@result %>% head()
+
+go_enrich@result %>%
+  filter(Description== "phagocytosis, recognition" |
+           Description=="regulation of viral process" | 
+           Description=="positive regulation of cytokine production"|
+           Description=="regulation of innate immune response"|
+           Description== "regulation of B cell activation" |
+           Description=="T cell mediated cytotoxicity" |
+           Description=="chemokine-mediated signaling pathway" |
+           Description=="regulation of natural killer cell mediated immunity" |
+           Description=="CD8-positive, alpha-beta T cell activation" |
+           Description=="natural killer cell mediated cytotoxicity" |
+           Description=="negative regulation of viral process" |
+           Description=="type I interferon production" |
+           Description=="complement activation, classical pathway" |
+           Description=="cellular response to type I interferon" |
+           Description=="lymphocyte mediated immunity"|
+           Description== "B cell activation" |
+           Description=="positive regulation of cell activation" |
+           Description=="regulation of innate immune response" |
+           Description=="regulation of adaptive immune response" |
+           Description=="response to interferon-beta" |
+           Description=="T cell cytokine production" )%>%
+  arrange(desc(p.adjust)) %>%
+  ggplot(aes(y=factor(Description), x= Count, fill= p.adjust)) +
+  geom_bar(stat = "identity", width = 0.7, size=20)  + 
+  theme(axis.text.y = element_text(size=20),
+        axis.title.y = element_blank()) +
+  scale_fill_gradient (low= "blue", high= "red") +
+  ggtitle("GO analysis for TLR9a vs HIV baseline") + theme(title = element_text(size = 17))
+
+saveRDS(HIV_TLR9_pDC, file = "C:/Users/au672897/Desktop/Manuscript pDC/Figures and scripts/aaGEO/Processed/Figure 2_processed.rds" )
+
+
+##### Figure 3
+
+library(Seurat)
+library(SeuratObject)
+library(ggplot2)
+library(dplyr)
+library(pheatmap)
+library(BiocManager)
+library(multtest)
+library(metap)
+library(limma)
+library(ggplot2)
+library(cowplot)
+theme_set(theme_cowplot())
+library(Signac)
+library(monocle3)
+library(Matrix)
+library(patchwork)
+set.seed(1234)
+library(SCORPIUS)
+library(patchwork)
+library(tidyverse)
+library(magrittr)
+library(ReactomePA)
+library(clusterProfiler)
+library(enrichplot)
+library(DOSE)
+library(biomaRt)
+library(org.Hs.eg.db)
+library(ChIPseeker)
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+library(monocle)
+library(ggrepel)
+library(EnhancedVolcano)
+library(Nebulosa)
+library(BiocFileCache)
+library(RColorBrewer)
+NK_NKT_cells <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/pDC only/NK_NKT cells.rds")
+NK_NKT_cells$celltype <- "NK_NKT_cells"
+#NK_NKT_cells <- NormalizeData(NK_NKT_cells, normalization.method = "LogNormalize", scale.factor = 10000)
+NK_NKT_cells <- FindVariableFeatures(NK_NKT_cells, selection.method = "vst", nfeatures = 2000)
+NK_NKT_cells <- ScaleData(object = NK_NKT_cells, verbose = FALSE)
+
+cytotoxic_pDC <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/pDC only/cytotoxic_pDC.rds")
+cytotoxic_pDC$celltype <- "cytotoxic-like pDC"
+#cytotoxic_pDC <- NormalizeData(cytotoxic_pDC, normalization.method = "LogNormalize", scale.factor = 10000)
+cytotoxic_pDC <- FindVariableFeatures(cytotoxic_pDC, selection.method = "vst", nfeatures = 2000)
+cytotoxic_pDC <- ScaleData(object = cytotoxic_pDC, verbose = FALSE)
+
+T_cells <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/pDC only/T_cells.rds")
+T_cells$celltype <- "T_cells"
+#T_cells <- NormalizeData(T_cells, normalization.method = "LogNormalize", scale.factor = 10000)
+T_cells <- FindVariableFeatures(T_cells, selection.method = "vst", nfeatures = 2000)
+T_cells <- ScaleData(object = T_cells, verbose = FALSE)
+
+anchors <- FindIntegrationAnchors(object.list = list( NK_NKT_cells, T_cells, cytotoxic_pDC), dims = 1:20)
+cytotoxicity <- IntegrateData(anchorset = anchors, dims = 1:20)
+DefaultAssay(object = cytotoxicity) <- "integrated"
+saveRDS(cytotoxicity, file = "C:/Users/au672897/Desktop/pDC Sequence data/pDC only/cytotoxicity.rds")
+cytotoxicity <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/pDC only/cytotoxicity.rds")
+cytotoxicity <- ScaleData(object = cytotoxicity, verbose = FALSE)
+cytotoxicity <- RunPCA(object = cytotoxicity, npcs = 30, verbose = FALSE)
+cytotoxicity <- RunUMAP(object = cytotoxicity, reduction = "pca", dims = 1:20) 
+cytotoxicity <- FindNeighbors(object = cytotoxicity, reduction = "pca", dims = 1:20)
+cytotoxicity <- FindClusters(cytotoxicity, resolution = 0.2)
+DimPlot(cytotoxicity, reduction = "umap", label = TRUE, repel = TRUE, raster=FALSE, label.size = 10, group.by = "celltype") + theme(text = element_text(size = 25))
+DefaultAssay(cytotoxicity) <- "RNA"
+
+Idents(cytotoxicity) <- "celltype"
+cytotoxicity.markers <- FindAllMarkers(cytotoxicity, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+cytotoxicity <- ScaleData(object = cytotoxicity, features = rownames(cytotoxicity), verbose = FALSE)
+top40 <- head(VariableFeatures(cytotoxicity), 40)
+top40 <- cytotoxicity.markers %>% group_by(cluster) %>% top_n(40, avg_log2FC)
+DoHeatmap(cytotoxicity, features = top40$gene, label = T, angle = 0, size = 8) + theme(text = element_text(size = 20)) + theme(axis.text.y = element_text(size = 20))
+RidgePlot(cytotoxicity, features = c("CLEC4C", "LILRA4", "IL3RA", "CD3D","CD3G", "NKG7", "GNLY", "PRF1", "GZMB"), ncol = NULL, group.by= "celltype")
+
+ave <- AverageExpression(cytotoxicity)$RNA
+cor.exp1 <- as.data.frame(cor(ave))
+pheatmap(cor.exp1,fontsize = 30, border_color = NA, clustering_distance_cols= "correlation", clustering_distance_rows= "correlation")
+
+saveRDS(cytotoxicity, file = "C:/Users/au672897/Desktop/Manuscript pDC/Figures and scripts/aaGEO/Processed/Figure 3_processed.rds" )
+
+
+##### Figure 4
+
+library(Seurat)
+library(SeuratObject)
+
+HIV103_V1 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV103_V1.rds")
+HIV103_V1$sample <- "HIV103_BL"
+HIV103_V1$condition <- "HIV"
+HIV103_V1 <- NormalizeData(HIV103_V1, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV103_V1 <- FindVariableFeatures(HIV103_V1, selection.method = "vst", nfeatures = 2000)
+HIV103_V1 <- ScaleData(object = HIV103_V1, verbose = FALSE)
+
+HIV109_V1 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV109_V1.rds")
+HIV109_V1$sample <- "HIV109_BL"
+HIV109_V1$condition <- "HIV"
+HIV109_V1 <- NormalizeData(HIV109_V1, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV109_V1 <- FindVariableFeatures(HIV109_V1, selection.method = "vst", nfeatures = 2000)
+HIV109_V1 <- ScaleData(object = HIV109_V1, verbose = FALSE)
+
+HIV112_V1 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV112_V1.rds")
+HIV112_V1$sample <- "HIV112_BL"
+HIV112_V1$condition <- "HIV"
+HIV112_V1 <- NormalizeData(HIV112_V1, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV112_V1 <- FindVariableFeatures(HIV112_V1, selection.method = "vst", nfeatures = 2000)
+HIV112_V1 <- ScaleData(object = HIV112_V1, verbose = FALSE)
+
+HIV113_V1 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV113_V1.rds")
+HIV113_V1$sample <- "HIV113_BL"
+HIV113_V1$condition <- "HIV"
+HIV113_V1 <- NormalizeData(HIV113_V1, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV113_V1 <- FindVariableFeatures(HIV113_V1, selection.method = "vst", nfeatures = 2000)
+HIV113_V1 <- ScaleData(object = HIV113_V1, verbose = FALSE)
+
+HIV103_V12 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV103_V12.rds")
+HIV103_V12$sample <- "HIV103_TLR9a"
+HIV103_V12$condition <- "HIV + TLR9a"
+HIV103_V12 <- NormalizeData(HIV103_V12, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV103_V12 <- FindVariableFeatures(HIV103_V12, selection.method = "vst", nfeatures = 2000)
+HIV103_V12 <- ScaleData(object = HIV103_V12, verbose = FALSE)
+
+HIV109_V12 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV109_V12.rds")
+HIV109_V12$sample <- "HIV109_TLR9a"
+HIV109_V12$condition <- "HIV + TLR9a"
+HIV109_V12 <- NormalizeData(HIV109_V12, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV109_V12 <- FindVariableFeatures(HIV109_V12, selection.method = "vst", nfeatures = 2000)
+HIV109_V12 <- ScaleData(object = HIV109_V12, verbose = FALSE)
+
+HIV112_V12 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV112_V12.rds")
+HIV112_V12$sample <- "HIV112_TLR9a"
+HIV112_V12$condition <- "HIV + TLR9a"
+HIV112_V12 <- NormalizeData(HIV112_V12, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV112_V12 <- FindVariableFeatures(HIV112_V12, selection.method = "vst", nfeatures = 2000)
+HIV112_V12 <- ScaleData(object = HIV112_V12, verbose = FALSE)
+
+HIV113_V12 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HIV113_V12.rds")
+HIV113_V12$sample <- "HIV113_TLR9a"
+HIV113_V12$condition <- "HIV + TLR9a"
+HIV113_V12 <- NormalizeData(HIV113_V12, normalization.method = "LogNormalize", scale.factor = 10000)
+HIV113_V12 <- FindVariableFeatures(HIV113_V12, selection.method = "vst", nfeatures = 2000)
+HIV113_V12 <- ScaleData(object = HIV113_V12, verbose = FALSE)
+
+HC61 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HC61.rds")
+HC61$sample <- "HC61"
+HC61$visit <- "H_control"
+HC61 <- NormalizeData(HC61, normalization.method = "LogNormalize", scale.factor = 10000)
+HC61 <- FindVariableFeatures(HC61, selection.method = "vst", nfeatures = 2000)
+HC61 <- ScaleData(object = HC61, verbose = FALSE)
+HC63 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HC63.rds")
+HC63$sample <- "HC63"
+HC63$visit <- "H_control"
+HC63 <- NormalizeData(HC63, normalization.method = "LogNormalize", scale.factor = 10000)
+HC63 <- FindVariableFeatures(HC63, selection.method = "vst", nfeatures = 2000)
+HC63 <- ScaleData(object = HC63, verbose = FALSE)
+HC65 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HC65.rds")
+HC65$sample <- "HC65"
+HC65$visit <- "H_control"
+HC65 <- NormalizeData(HC65, normalization.method = "LogNormalize", scale.factor = 10000)
+HC65 <- FindVariableFeatures(HC65, selection.method = "vst", nfeatures = 2000)
+HC65 <- ScaleData(object = HC65, verbose = FALSE)
+HC66 <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/Singlet/HC66.rds")
+HC66$sample <- "HC66"
+HC66$visit <- "H_control"
+HC66 <- NormalizeData(HC66, normalization.method = "LogNormalize", scale.factor = 10000)
+HC66 <- FindVariableFeatures(HC66, selection.method = "vst", nfeatures = 2000)
+HC66 <- ScaleData(object = HC66, verbose = FALSE)
+
+
+anchors <- FindIntegrationAnchors(object.list = list(HC61, HC63, HC65, HC66, HIV112_V1, HIV113_V1, HIV109_V1, HIV103_V1, HIV112_V12, HIV113_V12, HIV109_V12, HIV103_V12), dims = 1:20)
+lamin <- IntegrateData(anchorset = anchors, dims = 1:20)
+DefaultAssay(object = lamin) <- "integrated"
+saveRDS(lamin, file = "C:/Users/au672897/Desktop/pDC Sequence data/pDC only/lamin.rds")
+lamin <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/pDC only/lamin.rds")
+lamin <- ScaleData(object = lamin, verbose = FALSE)
+lamin <- RunPCA(object = lamin, npcs = 30, verbose = FALSE)
+lamin <- RunUMAP(object = lamin, reduction = "pca", dims = 1:20) 
+lamin <- FindNeighbors(object = lamin, reduction = "pca", dims = 1:20)
+lamin <- FindClusters(lamin, resolution = 0.5)
+DimPlot(lamin, reduction = "umap", label = TRUE, repel = TRUE , raster=FALSE, label.size = 8)+  theme(text = element_text(size = 15)) + NoLegend()
+FeaturePlot(lamin, features = c("CD4"), raster=FALSE, pt.size = 1)
+library(dplyr)
+lamin.markers <- FindAllMarkers(lamin, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+lamin <- ScaleData(object = lamin, verbose = FALSE)
+top10 <- head(VariableFeatures(lamin), 10)
+top10 <- lamin.markers %>% group_by(cluster) %>% top_n(10, avg_log2FC)
+DoHeatmap(lamin, features = top10$gene)
+
+DefaultAssay(lamin) <- "RNA"
+
+features<- c('CLEC4C', 'LILRA4', 'IL3RA', 'IL7R','IGHA1', 'IGKC', 'IGLC2', 'CD3G', 'CD3D', 'CCR7', 'CD14','FCGR3A', 'MS4A7', 'LYZ', 'MS4A1', 'CD8A', 'GNLY', 'NKG7', 'PPBP') 
+DotPlot(lamin, features = features, cols = c("blue", "red", "green"), dot.scale = 15) + RotatedAxis()+  theme(axis.text = element_text(size = 20))
+new.cluster.ids <- c("pDC","pDC","pDC", "Erythroid-like cells","B cells", "T cells", "pDC", "NK/NKT cells", "pDC", "T cells",  "Monocytes", "Platelet","Erythroid-like cells","Erythroid-like cells", "pDC", "B cells",  "Monocytes", "NK/NKT cells","Platelet","T cells")
+names(new.cluster.ids) <- levels(lamin)
+lamin <- RenameIdents(lamin, new.cluster.ids)
+
+
+
+VlnPlot(lamin, features = c("CLEC4C", "IL3RA"), pt.size = 0, raster=FALSE)
+FeaturePlot(lamin, features = c("CLEC4C", "IL3RA", "LILRA4"), raster=FALSE)
+
+
+lamin$pDC <- "other"
+lamin$pDC[which(lamin$integrated_snn_res.0.5 %in% c(0,1,2,3,8,9,17,19))] <- "pDC"
+Idents(object = lamin) <- "pDC"
+Idents(object = lamin, cells = 1:10) <- "pDC"
+lamin_pDC <- subset(lamin, idents = "pDC")
+lamin
+lamin_pDC
+saveRDS(lamin_pDC, file = "C:/Users/au672897/Desktop/pDC Sequence data/pDC only/lamin_pDC.rds")
+
+
+library(Seurat)
+library(SeuratObject)
+library(dplyr)
+library(pheatmap)
+library(BiocManager)
+library(multtest)
+library(metap)
+library(limma)
+library(ggplot2)
+library(cowplot)
+theme_set(theme_cowplot())
+library(Signac)
+library(monocle3)
+library(Matrix)
+library(patchwork)
+set.seed(1234)
+library(SCORPIUS)
+library(patchwork)
+library(tidyverse)
+library(magrittr)
+library(ReactomePA)
+library(clusterProfiler)
+library(enrichplot)
+library(DOSE)
+library(biomaRt)
+library(org.Hs.eg.db)
+library(ChIPseeker)
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+library(monocle)
+library(ggrepel)
+library(EnhancedVolcano)
+library(Nebulosa)
+library(BiocFileCache)
+library(RColorBrewer)
+library(CellChat)
+library(patchwork)
+options(stringsAsFactors = FALSE)
+library(igraph)
+
+lamin <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/pDC only/lamin.rds")
+lamin <- FindVariableFeatures(object = lamin, selection.method = "vst", nfeatures = 1000)
+lamin <- ScaleData(object = lamin, features = rownames(lamin), verbose = FALSE)
+lamin <- RunPCA(object = lamin, npcs = 30, verbose = FALSE)
+lamin <- RunUMAP(object = lamin, reduction = "pca", dims = 1:20) 
+lamin <- FindNeighbors(object = lamin, reduction = "pca", dims = 1:20)
+lamin <- FindClusters(lamin, resolution = 0.5)
+DimPlot(lamin, reduction = "umap", pt.size = 0.5, raster=FALSE , repel = TRUE, label = TRUE, label.size = 10) + theme(text = element_text(size = 25)) + NoLegend()
+DefaultAssay(lamin) <- "RNA"
+
+new.cluster.ids <- c("pDC1","pDC2","cytotoxic-like pDC", "Exhausted pDC","B cells", "NK/NKT cells", "CD8 T cells",  "Erythroid-like cells", "Platelet","Monocytes",  "CD4 T cells")
+names(new.cluster.ids) <- levels(lamin)
+lamin <- RenameIdents(lamin, new.cluster.ids)
+#lamin$annotation <- Idents(lamin)
+#head(lamin[[]])
+#levels(lamin)
+#levels <- levels(lamin)[c(1,2,11,3, 4:10)]
+#lamin$annotation <- factor(lamin$annotation, levels = levels)
+#Idents(lamin) <- "annotation"
+#saveRDS(lamin, file = "C:/Users/au672897/Desktop/pDC Sequence data/CellChat/single cellchat/lamin.rds")
+#lamin <- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/CellChat/single cellchat/lamin.rds")
+
+data.input= lamin@assays$RNA@data
+meta= lamin@meta.data
+cell.use = rownames(meta)
+cell.use
+data.input_J <- GetAssayData(lamin, assay = "RNA", slot = "data")
+labels_J <- Idents(lamin)
+meta_J <- data.frame(group = labels_J, row.names = names(labels_J))
+cellchat_J <- createCellChat(object = data.input_J, meta = meta_J, group.by = "group")
+cellchat_J <- addMeta(cellchat_J, meta = meta_J)
+cellchat_J <- setIdent(cellchat_J, ident.use = "group")
+groupSize <- as.numeric(table(cellchat_J@idents))
+CellChatDB <- CellChatDB.human
+showDatabaseCategory(CellChatDB)
+dplyr::glimpse(CellChatDB$interaction)
+CellChatDB.use <- subsetDB(CellChatDB, search = "Secreted Signaling") 
+CellChatDB.use <- CellChatDB
+cellchat_J@DB <- CellChatDB.use
+cellchat <- subsetData(cellchat_J, features = NULL)
+future::plan("multiprocess", workers = 4)
+cellchat <- identifyOverExpressedGenes(cellchat)
+cellchat <- identifyOverExpressedInteractions(cellchat)
+cellchat <- projectData(cellchat, PPI.human)
+options(future.globals.maxSize = 8000 * 1024^2)
+cellchat <- computeCommunProb(cellchat) 
+cellchat <- filterCommunication(cellchat, min.cells = 0)
+cellchat <- computeCommunProbPathway(cellchat)
+cellchat <- aggregateNet(cellchat)
+
+cellchat<- readRDS("C:/Users/au672897/Desktop/pDC Sequence data/CellChat/single cellchat/cellchat.rds")
+
+groupSize <- as.numeric(table(cellchat@idents))
+par(mfrow = c(1,2), xpd=TRUE)
+netVisual_circle(cellchat@net$count, vertex.weight = groupSize, weight.scale = T, label.edge= F, title.name = "Number of interactions",vertex.label.cex = 2, shape = "circle")
+netVisual_circle(cellchat@net$weight, vertex.weight = groupSize, weight.scale = T, label.edge= F, title.name = "Interaction weights/strength", vertex.label.cex = 2,  shape = "circle" )
+mat <- cellchat@net$weight
+cellchat@netP$pathways
+cellchat <- netAnalysis_computeCentrality(cellchat, slot.name = "netP") 
+ht1 <- netAnalysis_signalingRole_heatmap(cellchat, pattern = "outgoing",font.size.title = 20, width = 20, height = 17, font.size = 20)
+ht2 <- netAnalysis_signalingRole_heatmap(cellchat, pattern = "incoming",font.size.title = 20, width = 20, height = 17, font.size = 20)
+ht1 + ht2
+library(NMF)
+library(ggalluvial)
+selectK(cellchat, pattern = "outgoing")
+nPatterns = 3
+cellchat <- identifyCommunicationPatterns(cellchat, pattern = "outgoing", k = nPatterns)
+netAnalysis_river(cellchat, pattern = "outgoing", font.size = 5, font.size.title = 20, cutoff = 0.3)
+netAnalysis_dot(cellchat, pattern = "outgoing", font.size = 20)
+selectK(cellchat, pattern = "incoming")
+nPatterns = 3
+cellchat <- identifyCommunicationPatterns(cellchat, pattern = "incoming", k = nPatterns)
+netAnalysis_river(cellchat, pattern = "incoming", font.size = 5, font.size.title = 20, cutoff = 0.3)
+netAnalysis_dot(cellchat, pattern = "incoming")
+netVisual_bubble(cellchat, sources.use = c(1,2,3,4), targets.use = c(1:11), signaling = c("MHC-II","APP", "MIF","CD99", "MHC-I", "SELPLG", "CLEC", "CD22","CD45", "BAFF", "GALECTIN", "ITGB2","CXCL","ADGRE5"), remove.isolate = FALSE, font.size = 30, font.size.title = 20,thresh = 0.01)
+netVisual_bubble(cellchat, sources.use = 1, targets.use = c(1:11), remove.isolate = FALSE)
+pathways.show <- c("MHC-II")
+netVisual_heatmap(cellchat, signaling = pathways.show, color.heatmap = "Reds", font.size = 20,width = 20, height = 10, title.name = "MHC-II signaling network", font.size.title = 20)
+plotGeneExpression(cellchat, signaling = c( "MHC-II" ), raster=FALSE)+ NoLegend()
+pathways.show <- c("CD99")
+netVisual_heatmap(cellchat, signaling = pathways.show, color.heatmap = "Reds", font.size = 20,width = 20, height = 10, title.name = "CD99 signaling network", font.size.title = 20)
+pathways.show <- c("CD99")
+pathways.show <- c("MIF")
+cellchat <- netAnalysis_computeCentrality(cellchat, slot.name = "netP") 
+netAnalysis_signalingRole_network(cellchat, signaling = pathways.show, width = 20, height = 10, font.size = 20, font.size.title = 20)
+library(uwot)
+gg1 <- rankNet(cellchat, mode = "comparison", stacked = T, do.stat = TRUE,comparison = c(1, 2, 3), font.size = 15)
+gg2 <- rankNet(cellchat, mode = "comparison", stacked = F, do.stat = TRUE, comparison = c(1, 2, 3), font.size = 15)
+gg1 + gg2
+cellchat <- computeNetSimilarityPairwise(cellchat, type = "functional", slot.name = "netP")
+cellchat <- netEmbedding(cellchat,slot.name = "netP", type = "functional", umap.method = c("uwot"), min_dist = 0.3, n_neighbors = NULL)
+cellchat <- netClustering(cellchat, type = "functional")
+netVisual_embeddingPairwise(cellchat, type = "functional", label.size = 4)
+cellchat <- computeNetSimilarity(cellchat, type = "structural")
+cellchat <- netEmbedding(cellchat, type = "structural")
+cellchat <- netClustering(cellchat, type = "structural")
+netVisual_embedding(cellchat, type = "structural", label.size = 3.5)
+netVisual_embeddingZoomIn(cellchat, type = "structural", nCol = 2)
+
+netAnalysis_signalingRole_network(cellchat, signaling = pathways.show, width = 20, height = 10, font.size = 20, font.size.title = 20)
+
+
+saveRDS(cellchat, file = "C:/Users/au672897/Desktop/Manuscript pDC/Figures and scripts/aaGEO/Processed/Figure 4_processed.rds" )
+
